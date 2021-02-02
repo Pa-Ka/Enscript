@@ -8,7 +8,7 @@ class MainClass
     void Main(CaseClass c)
     {
         NameValueClass list(); // C#의 Dict와 비슷하네
-        String apikey = "c19d5ad64781c6abdc5092547b7590b17818b6860732b06712c84e9171f87440";
+        String apikey = "-";
         for(ItemIteratorClass iter(c, 0, ItemIteratorClass::CURRENTVIEW_SELECTED); EntryClass entry = iter.GetNextEntry();)
         {
             //Console.Write(entry.Name() + ": ");
