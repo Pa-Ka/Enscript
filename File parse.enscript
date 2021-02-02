@@ -1,0 +1,59 @@
+class MainClass
+{
+    typedef byte[] ByteArray;
+    void Main(CaseClass c)
+    {
+        SystemClass::ClearConsole();
+        if(!c)
+        {
+            Console.WriteLine("please open case");
+            return;
+        }
+
+        for(ItemIteratorClass iter(c); DeviceClass dev = iter.GetNextDevice();) 
+        {
+            if(dev.IsPhysical())
+            {
+                EntryFileClass entry();
+                //long totalSector = dev.TotalSectors();
+                    
+                entry.Open(dev, 0, 16); // size / sector per byte
+                entry.SetCodePage(CodePageClass::ANSI);
+                entry.Seek(0);
+                    
+                LocalFileClass file();
+                file.Open("C:\\MBR.dat", FileClass::WRITE);
+                file.WriteBuffer(entry, dev.BytesPerSector());        
+                file.Close();
+
+                for(int i = 1; i <= 2/*dev.BytesPerSector()*/; i++)
+                {
+                    String filename = "C:\\case\\Block#" + i + ".dat";
+                    file.Open(filename, FileClass::WRITE);
+                    file.WriteBuffer(entry, dev.BytesPerSector());        
+                    file.Close();
+                }    
+                
+                entry.Close();
+            }
+        }
+        
+        for(ItemIteratorClass iter(c); EntryClass entry = iter.GetNextEntry();) 
+        {
+            if(entry.Name() == "Unallocated Clusters")
+            {
+                ByteArray ba(512);
+                EntryFileClass ef ();
+                ef.Open(entry, 0);
+                ef.ReadBinary(ba);
+                for(int i = 0; i < 512; i++) {
+                  if((i%4) == 0) Console.Write(" ");
+                  if((i%16) == 0) Console.WriteLine();
+                    Console.Write(String::FormatInt(ba[i], int::HEX, 0, 2));
+                }
+                Console.WriteLine("\r\n");
+                ef.Close(); 
+            }
+        }
+    }
+}

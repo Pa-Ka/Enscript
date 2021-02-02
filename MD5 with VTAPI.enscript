@@ -1,0 +1,136 @@
+class MainClass
+{
+    int total;
+    int positive;
+    int response_code;
+    String detectName;
+    
+    void Main(CaseClass c)
+    {
+        NameValueClass list(); // C#의 Dict와 비슷하네
+        String apikey = "c19d5ad64781c6abdc5092547b7590b17818b6860732b06712c84e9171f87440";
+        for(ItemIteratorClass iter(c, 0, ItemIteratorClass::CURRENTVIEW_SELECTED); EntryClass entry = iter.GetNextEntry();)
+        {
+            //Console.Write(entry.Name() + ": ");
+
+            SearchClass search();
+            HashClass md5 = search.ComputeHash(entry);
+
+            if(md5.IsValid())
+            {
+                //Console.WriteLine(md5);
+                NameValueClass n = list.Find(md5);
+                if(!n)
+                {
+                    NameValueClass key(list, md5);
+                    key.SetValue(entry.TruePath());
+                    Console.WriteLine("{0} has been added with {1} value in the list", entry.TruePath(), md5);
+                }
+                else
+                {
+                    //Console.WriteLine("Duplicate hash value ignored for file: " + entry.TruePath());
+                }
+            }
+        }
+        
+        forall(NameValueClass nv in list)
+        {
+            Console.Write("File: " + nv.Value() + " | ");
+            MemoryFileClass f();
+            f.Open(VirusTotalAPIClass::Request(apikey, nv.Name()));
+            NameVariantClass root();
+            if (root.ReadJSON(f))
+                WriteValue(root);
+            else
+                Console.Write("Error: {0}", SystemClass::LastError());
+            
+            if(detectName)
+              Console.WriteLine("DetectName: " + detectName);
+            
+            if(total > 0 && positive > 0)
+              Console.WriteLine("{1} out of {0} vaccines were detected.", String(total), String(positive));
+            
+            if(response_code == 0)
+              Console.WriteLine("VirusTotal에 결과가 없는 파일입니다.");
+            
+            detectName = "";
+            total = 0;
+            positive = 0;
+        }
+    }
+    
+    void WriteValue(NameVariantClass root) {
+        if (root.FirstChild()) 
+        {
+            foreach (NameVariantClass n in root) {
+                WriteValue(n);
+            }
+        }
+        else 
+        {
+            variant v = root.Value;
+            SymbolClass t = v.Type();
+
+            switch(root.Name())
+            {
+                case "result":
+                    if(v)
+                        detectName += v + " ";
+                    break;
+
+                case "resource":
+                    Console.Write("Resource: " + v + " | ");
+                    break;
+                
+                case "verbose_msg":
+                    Console.Write("msg: " + v + " | ");
+                    break;
+
+                case "total":
+                    total = v;
+                    break;
+
+                case "positives":
+                    positive = v;
+                    break;
+                
+                case "response_code":
+                    response_code = v;
+                    break;              
+            }
+            
+        }
+    }
+}
+
+class VirusTotalAPIClass{
+    public static String Request(String key, String md5){
+        String result = "";
+        WebClientClass client();
+        String address = "www.virustotal.com";
+        uint port = SocketClass::HTTPPORT;
+        if(client.Open(address, port)){
+            WebServiceClass::RequestClass request();
+            WebServiceClass::ReplyClass reply();
+            //md5 = "9CEAE383F5AF54A64DDFCB77920DA7B2A86DBB899256ED0FF9605E9D8160B130";
+            String relativeUrl = String::Format("/vtapi/v2/file/report?apikey={0}&resource={1}", key, md5);
+            request.Command = WebServiceClass::RequestClass::GET;
+            request.URL = relativeUrl;
+            if(!client.Command(request, reply)){
+                Console.WriteLine("Command was not sent to server");
+            }
+            if(reply.File && reply.File.IsOpen()){
+                String line;
+                reply.File.SetCodePage(CodePageClass::ANSI);
+                //NameVariantClass var();
+                //var.ReadJSON(reply.File);
+                while(reply.File.More()){
+                    reply.File.ReadString(line, -1, "\r\n");
+                    line.Trim("\r\n", String::TRIMALL);
+                    result += line;
+                }
+            }
+        }
+        return result;
+    }
+}
